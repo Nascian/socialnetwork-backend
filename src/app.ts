@@ -5,6 +5,7 @@ import express, { Request, Response } from 'express';
 import authRouter from './routes/auth';
 import healthRouter from './routes/health';
 import profileRouter from './routes/profile';
+import postsRouter from './routes/posts';
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use('/health', healthRouter);
 app.use('/auth', authRouter);
 app.use('/', profileRouter);
+app.use('/', postsRouter);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {
