@@ -67,3 +67,31 @@ describe('Posts: POST /posts', () => {
     expect(res.body).toHaveProperty('user');
   });
 });
+
+describe('Posts: like/unlike', () => {
+  it('likes and unlikes a post idempotently', async () => {
+    const login = await request(app)
+      .post('/auth/login')
+      .send({ username: 'demo1', password: 'password' })
+      .expect(200);
+    const token = login.body.token as string;
+
+    const list = await request(app)
+      .get('/posts')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    const id = list.body.items[0]?.id as string | undefined;
+    expect(id).toBeTruthy();
+    if (!id) return;
+
+    const like1 = await request(app).post(`/posts/${id}/like`).set('Authorization', `Bearer ${token}`).expect(201);
+    expect(like1.body.likedByMe).toBe(true);
+    const like2 = await request(app).post(`/posts/${id}/like`).set('Authorization', `Bearer ${token}`).expect(200);
+    expect(like2.body.likedByMe).toBe(true);
+
+    const unlike1 = await request(app).delete(`/posts/${id}/like`).set('Authorization', `Bearer ${token}`).expect(200);
+    expect(unlike1.body.likedByMe).toBe(false);
+    const unlike2 = await request(app).delete(`/posts/${id}/like`).set('Authorization', `Bearer ${token}`).expect(200);
+    expect(unlike2.body.likedByMe).toBe(false);
+  });
+});

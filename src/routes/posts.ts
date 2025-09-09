@@ -84,4 +84,59 @@ router.post('/posts', authenticateJWT, async (req: AuthRequest, res) => {
   }
 });
 
+// POST /posts/:id/like -> like a post (idempotent)
+router.post('/posts/:id/like', authenticateJWT, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const postId = req.params.id;
+  try {
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    const existing = await prisma.like.findUnique({ where: { userId_postId: { userId, postId } } as any });
+    if (existing) {
+      // Already liked: idempotent success
+      const count = await prisma.like.count({ where: { postId } });
+      return res.json({ likeCount: count, likedByMe: true });
+    }
+
+    await prisma.$transaction([
+      prisma.like.create({ data: { userId, postId } }),
+      prisma.post.update({ where: { id: postId }, data: { likeCount: { increment: 1 } } }),
+    ]);
+    const count = await prisma.like.count({ where: { postId } });
+    return res.status(201).json({ likeCount: count, likedByMe: true });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Error liking post', err);
+    return res.status(500).json({ message: 'Failed to like post' });
+  }
+});
+
+// DELETE /posts/:id/like -> unlike a post (idempotent)
+router.delete('/posts/:id/like', authenticateJWT, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const postId = req.params.id;
+  try {
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    const existing = await prisma.like.findUnique({ where: { userId_postId: { userId, postId } } as any });
+    if (!existing) {
+      const count = await prisma.like.count({ where: { postId } });
+      return res.json({ likeCount: count, likedByMe: false });
+    }
+
+    await prisma.$transaction([
+      prisma.like.delete({ where: { id: existing.id } }),
+      prisma.post.update({ where: { id: postId }, data: { likeCount: { decrement: 1 } } }),
+    ]);
+    const count = await prisma.like.count({ where: { postId } });
+    return res.json({ likeCount: count, likedByMe: false });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Error unliking post', err);
+    return res.status(500).json({ message: 'Failed to unlike post' });
+  }
+});
+
 export default router;
