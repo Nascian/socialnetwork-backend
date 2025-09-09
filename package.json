@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --name init",
-    "db:seed": "ts-node --transpile-only prisma/seed.ts"
+  "db:seed": "ts-node --transpile-only prisma/seed.ts",
+  "docs:pdf": "md-to-pdf README.md --config-file docs/md-to-pdf.config.json --stylesheet docs/pdf.css && mkdir -p docs && mv -f README.pdf docs/INSTALACION_Y_EXPLICACION.pdf"
   },
   "keywords": [
     "node",
@@ -52,6 +53,7 @@
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.6.2"
+  "typescript": "^5.6.2",
+  "md-to-pdf": "^5.2.4"
   }
 }
