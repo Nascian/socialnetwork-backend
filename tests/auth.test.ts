@@ -25,6 +25,10 @@ describe('Profile: GET /me', () => {
     await request(app).get('/me').expect(401);
   });
 
+  it('rejects invalid token', async () => {
+    await request(app).get('/me').set('Authorization', 'Bearer invalid.token.here').expect(401);
+  });
+
   it('returns profile with valid token', async () => {
     const login = await request(app)
       .post('/auth/login')

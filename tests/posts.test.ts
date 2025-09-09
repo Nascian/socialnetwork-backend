@@ -30,6 +30,40 @@ describe('Posts: GET /posts', () => {
     }
     expect(res.body).toMatchObject({ page: 1, pageSize: 5 });
   });
+
+  it('handles invalid pagination params gracefully', async () => {
+    const login = await request(app)
+      .post('/auth/login')
+      .send({ username: 'demo1', password: 'password' })
+      .expect(200);
+    const token = login.body.token as string;
+    const res = await request(app)
+      .get('/posts?page=abc&pageSize=-10')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(res.body.page).toBe(1);
+    expect(res.body.pageSize).toBeGreaterThan(0);
+  });
+
+  it('returns empty items for out-of-range page with proper metadata', async () => {
+    const login = await request(app)
+      .post('/auth/login')
+      .send({ username: 'demo1', password: 'password' })
+      .expect(200);
+    const token = login.body.token as string;
+    const first = await request(app)
+      .get('/posts?page=1&pageSize=1')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    const totalPages = first.body.totalPages as number;
+    const res = await request(app)
+      .get(`/posts?page=${totalPages + 10}&pageSize=1`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(Array.isArray(res.body.items)).toBe(true);
+    expect(res.body.items.length).toBe(0);
+    expect(res.body.page).toBe(totalPages + 10);
+  });
 });
 
 describe('Posts: POST /posts', () => {
