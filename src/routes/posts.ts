@@ -49,4 +49,39 @@ router.get('/posts', authenticateJWT, async (req: AuthRequest, res) => {
   }
 });
 
+// POST /posts -> create a post for the authenticated user
+router.post('/posts', authenticateJWT, async (req: AuthRequest, res) => {
+  const userId = req.userId!;
+  const { message } = (req.body ?? {}) as { message?: string };
+
+  const trimmed = (message ?? '').trim();
+  if (!trimmed) {
+    return res.status(400).json({ message: 'Message is required' });
+  }
+  if (trimmed.length > 280) {
+    return res.status(400).json({ message: 'Message must be at most 280 characters' });
+  }
+
+  try {
+    const created = await prisma.post.create({
+      data: { message: trimmed, userId },
+      include: { user: { select: { id: true, firstName: true, lastName: true, alias: true } } },
+    });
+    const dto = {
+      id: created.id,
+      message: created.message,
+      userId: created.userId,
+      createdAt: created.createdAt,
+      user: created.user,
+      likeCount: 0,
+      likedByMe: false,
+    };
+    return res.status(201).json(dto);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Error creating post', err);
+    return res.status(500).json({ message: 'Failed to create post' });
+  }
+});
+
 export default router;

@@ -31,3 +31,39 @@ describe('Posts: GET /posts', () => {
     expect(res.body).toMatchObject({ page: 1, pageSize: 5 });
   });
 });
+
+describe('Posts: POST /posts', () => {
+  it('requires auth', async () => {
+    await request(app).post('/posts').send({ message: 'hi' }).expect(401);
+  });
+
+  it('validates message presence and length', async () => {
+    const login = await request(app)
+      .post('/auth/login')
+      .send({ username: 'demo1', password: 'password' })
+      .expect(200);
+    const token = login.body.token as string;
+    await request(app).post('/posts').set('Authorization', `Bearer ${token}`).send({ message: '' }).expect(400);
+    await request(app)
+      .post('/posts')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ message: 'a'.repeat(281) })
+      .expect(400);
+  });
+
+  it('creates a post and returns it', async () => {
+    const login = await request(app)
+      .post('/auth/login')
+      .send({ username: 'demo1', password: 'password' })
+      .expect(200);
+    const token = login.body.token as string;
+    const res = await request(app)
+      .post('/posts')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ message: 'Nuevo post de prueba' })
+      .expect(201);
+    expect(res.body).toHaveProperty('id');
+    expect(res.body.message).toBe('Nuevo post de prueba');
+    expect(res.body).toHaveProperty('user');
+  });
+});
