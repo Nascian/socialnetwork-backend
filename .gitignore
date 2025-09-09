@@ -1,0 +1,45 @@
+# Node dependencies
+node_modules/
+
+# Build outputs
+/dist/
+/build/
+/out/
+
+# TypeScript
+*.tsbuildinfo
+.eslintcache
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Coverage
+coverage/
+.nyc_output/
+coverage-final.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Prisma (for local sqlite scenarios)
+prisma/*.db
+prisma/*.db-journal
+
+# Editor/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Jest
+jest-results/
+
+# Docker/local data
+docker-data/
